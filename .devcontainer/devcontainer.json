@@ -1,0 +1,39 @@
+{
+  "name": "Kompass dev",
+  "build": {
+    "dockerfile": "../Dockerfile"
+  },
+  "runArgs": [
+    "--env-file",
+    "${localWorkspaceFolder}/.env"
+  ],
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+  "mounts": [
+    "source=kompass-uv-cache,target=/root/.cache/uv,type=volume",
+    "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind,consistency=cached",
+    "source=kompass-ccache,target=/root/.cache/ccache,type=volume",
+    "source=kompass-torch-ext,target=/root/.cache/torch_extensions,type=volume"
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-vscode.cpptools",
+        "llvm-vs-code-extensions.vscode-clangd",
+        "Anthropic.claude-code",
+        "albert.TabOut",
+        "charliermarsh.ruff"
+      ],
+      "settings": {
+        "C_Cpp.intelliSenseEngine": "disabled",
+        "python.defaultInterpreterPath": "/opt/venv/bin/python"
+      }
+    }
+  },
+  "postCreateCommand": "uv sync --frozen && nvcc --version",
+  "containerEnv": {
+    "UV_LINK_MODE": "copy",
+    "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
+  }
+}

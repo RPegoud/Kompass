@@ -1,0 +1,36 @@
+CompileFlags:
+  Add:
+    - -xcuda
+    - -std=c++20
+    - --cuda-path=/usr/local/cuda
+    - -I/usr/local/cuda/include
+    - --cuda-gpu-arch=sm_80 # TODO: adapt to the device in modal/runpod (T4=sm_75, A100=sm_80, H100=sm_90)
+    - --no-cuda-version-check
+
+    # CUDA 13 moved thrust/cub/libcu++ under include/cccl. nvcc adds this
+    # directory implicitly; clangd does not, and torch headers pull in thrust.
+    - -I/usr/local/cuda/include/cccl
+
+    # libtorch headers, bundled inside the pip `torch` wheel. Lets clangd resolve
+    # <torch/extension.h>, <ATen/ATen.h>, <c10/...> and the vendored pybind11.
+    - -I/opt/venv/lib/python3.14/site-packages/torch/include
+    - -I/opt/venv/lib/python3.14/site-packages/torch/include/torch/csrc/api/include
+    - -I/usr/include/python3.14
+
+    # Mirror the defines torch.utils.cpp_extension passes to nvcc, so what clangd
+    # sees matches what actually gets compiled.
+    - -DTORCH_API_INCLUDE_EXTENSION_H
+    - -D__CUDA_NO_HALF_OPERATORS__
+    - -D__CUDA_NO_HALF_CONVERSIONS__
+    - -D__CUDA_NO_HALF2_OPERATORS__
+    - -D__CUDA_NO_BFLOAT16_CONVERSIONS__
+
+    # Editor-only workarounds for clang 21 vs CUDA 13.3. Neither reaches nvcc.
+    # 1. Stubs texture_fetch_functions.h, deleted in CUDA 13 but still included
+    #    unconditionally by clang's __clang_cuda_runtime_wrapper.h.
+    - -I/opt/clangd-cuda-shim
+    # 2. On glibc >= 2.42 CUDA tags rsqrt/rsqrtf `noexcept(true)`, which clang
+    #    fails to parse in crt/math_functions.hpp. Blanking it costs nothing here.
+    - -D_NV_RSQRT_SPECIFIER=
+  Remove:
+    - -forward-unknown-to-host-compiler
