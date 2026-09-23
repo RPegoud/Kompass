@@ -1,49 +1,38 @@
+from dataclasses import dataclass
 from typing import Protocol
 
 import torch
 
 
+@dataclass
+class OpTest:
+    correct: bool
+    max_abs_diff: float
+
+
 class Op(Protocol):
     @staticmethod
-    def reference(*tensors: torch.Tensor) -> torch.Tensor: ...
-
-    @staticmethod
-    def make_inputs(
-        shape: tuple[int],
-        dtype: torch.dtype,
-        requires_grad: bool,
-        seed: int,
-        device: torch.device,
-    ) -> tuple[torch.Tensor, ...]: ...
-
-
-class VecAdd(Op):
-    @staticmethod
     def reference(*tensors: torch.Tensor) -> torch.Tensor:
-        A, B = tensors
-        return torch.add(A, B)
+        raise NotImplementedError
+
+    @staticmethod
+    def compare(pred: torch.Tensor, ref: torch.Tensor) -> OpTest:
+        raise NotImplementedError
 
     @staticmethod
     def make_inputs(
-        shape: tuple[int],
+        shape: tuple[int, ...],
         dtype: torch.dtype,
         requires_grad: bool,
         seed: int,
         device: torch.device,
     ) -> tuple[torch.Tensor, ...]:
-        gen = torch.Generator(device).manual_seed(seed)
-        A = torch.randn(
-            shape,
-            generator=gen,
-            dtype=dtype,
-            device=device,
-            requires_grad=requires_grad,
-        )
-        B = torch.randn(
-            size=shape,
-            generator=gen,
-            dtype=dtype,
-            device=device,
-            requires_grad=requires_grad,
-        )
-        return A, B
+        raise NotImplementedError
+
+    @staticmethod
+    def bytes_moved(shape: tuple[int, ...], dtype: torch.dtype) -> int:
+        raise NotImplementedError
+
+    @staticmethod
+    def flops(shape: tuple[int, ...], dtype: torch.dtype) -> int:
+        raise NotImplementedError

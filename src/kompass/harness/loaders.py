@@ -10,9 +10,21 @@ from torch.utils.cpp_extension import load
 
 
 class Loader(Protocol):
+    fn_name: str
     supports_backward: bool
 
-    def load(self) -> Callable: ...
+    def load(self) -> Callable:
+        raise NotImplementedError
+
+
+class TorchLoader(Loader):
+    def __init__(self, fn: Callable):
+        self.fn_name = f"torch_{fn.__name__}"
+        self.supports_backward = True
+        self.fn = fn
+
+    def load(self) -> Callable:
+        return self.fn
 
 
 class TritonLoader(Loader):
